@@ -1,61 +1,66 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 import logging
+import asyncio
 
-# Configuración
 TOKEN = "8849912721:AAHcopMWoLA69v2KgRmzoL_TMr3mwSeZIIQ"
-CANAL_ID = -1003955111759  # Tu ID de canal
+CANAL_ID = -1003955111759
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MENSAJE = """*🌎 Bienvenido a Hex Tunnel - Tunnel AIO
+MENSAJE = """*🌎 Bienvenido a Hex Tunnel - Tunnel AIO*
 
-🚀 La VPN todo en uno que te mantiene conectado cuando más lo necesitas.
+*🚀 La VPN todo en uno que te mantiene conectado cuando más lo necesitas.*
 
-🔒 Navega con privacidad, seguridad y velocidad desde cualquier parte del mundo, sin bloqueos y sin restricciones.*
+*🔒 Navega con privacidad, seguridad y velocidad desde cualquier parte del mundo, sin bloqueos y sin restricciones.*
 
-``🔥 Miles de usuarios ya disfrutan de una conexión rápida y estable en países como:
-🇲🇽 México | 🇨🇴 Colombia | 🇦🇷 Argentina | 🇨🇱 Chile | 🇵🇪 Perú | 🇧🇷 Brasil | 🇬🇧 Reino Unido | 🇲🇦 Marruecos | 🇿🇦 Sudáfrica | 🇰🇪 Kenia | 🇳🇬 Nigeria | 🇮🇳 India | 🇵🇰 Pakistán | 🇨🇺 Cuba … ¡y muchos más!```
+🔥 Miles de usuarios ya disfrutan de una conexión rápida y estable en países como:
+🇲🇽 México | 🇨🇴 Colombia | 🇦🇷 Argentina | 🇨🇱 Chile | 🇵🇪 Perú | 🇧🇷 Brasil | 🇬🇧 Reino Unido | 🇲🇦 Marruecos | 🇿🇦 Sudáfrica | 🇰🇪 Kenia | 🇳🇬 Nigeria | 🇮🇳 India | 🇵🇰 Pakistán | 🇨🇺 Cuba … ¡y muchos más!
 
-*⚡ ¿Sin megas? ¿Internet lento? ¿Páginas bloqueadas?
-Con Hex Tunnel - Tunnel AIO podrás seguir conectado de forma estable y segura.*
+*⚡ ¿Sin megas? ¿Internet lento? ¿Páginas bloqueadas?*
+Con Hex Tunnel - Tunnel AIO podrás seguir conectado de forma estable y segura.
 
-```✨ Disfruta de:
+✨ *Disfruta de:*
 ✔️ Servidores rápidos y optimizados
 ✔️ Conexión estable 24/7
 ✔️ Navegación privada y protegida
 ✔️ Acceso sin restricciones
 ✔️ Compatible con múltiples redes y países
 ✔️ Interfaz simple y fácil de usar
-✔️ Mejor rendimiento para juegos, redes sociales y streaming```
+✔️ Mejor rendimiento para juegos, redes sociales y streaming
 
-```📖 Cómo usar Hex Tunnel - Tunnel AIO:
+📖 *Cómo usar Hex Tunnel - Tunnel AIO:*
 
-1️⃣ Actualizar Servidores
+1️⃣ *Actualizar Servidores*
 Presiona "Actualizar" y obtén los servidores más recientes y rápidos disponibles.
 
-2️⃣ Generar Tiempo
+2️⃣ *Generar Tiempo*
 Toca "Generar Tiempo" y consigue minutos extra para seguir navegando sin límites.
 
-3️⃣ Elegir Servidor
+3️⃣ *Elegir Servidor*
 Selecciona el país que prefieras y conecta al servidor con mejor velocidad para ti.
 
-4️⃣ Conectar
-Pulsa "Conectar" y comienza a disfrutar de Internet rápido, privado y sin restricciones.```
+4️⃣ *Conectar*
+Pulsa "Conectar" y comienza a disfrutar de Internet rápido, privado y sin restricciones.
 
-*💥 Con Hex Tunnel - Tunnel AIO podrás mantenerte conectado donde otros fallan.
+*💥 Con Hex Tunnel - Tunnel AIO podrás mantenerte conectado donde otros fallan.*
 
 🌐 Más velocidad.
 🔒 Más privacidad.
 ⚡ Más libertad.
 
-🚀 ¡Descarga Hex Tunnel - Tunnel AIO ahora y lleva tu conexión al siguiente nivel!*
+*🚀 ¡Descarga Hex Tunnel - Tunnel AIO ahora y lleva tu conexión al siguiente nivel!*
 👉🏻 https://play.google.com/store/apps/details?id=com.hex.tunnel.jotchuast 👈🏻"""
 
-async def enviar_mensaje(app: Application):
-    """Envía el mensaje cada 3 horas"""
+app = None
+
+async def enviar_mensaje():
+    global app
+    if not app:
+        return
+    
     keyboard = [
         [InlineKeyboardButton("Admin", url="https://t.me/Jotchua_DevzZ")],
         [InlineKeyboardButton("Canal", url="https://t.me/RequestLab_X_Canal")],
@@ -64,22 +69,28 @@ async def enviar_mensaje(app: Application):
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     try:
-        await app.bot.send_message(chat_id=CANAL_ID, text=MENSAJE, reply_markup=reply_markup)
-        logger.info("Mensaje enviado ✓")
+        await app.bot.send_message(chat_id=CANAL_ID, text=MENSAJE, reply_markup=reply_markup, parse_mode='Markdown')
+        logger.info("✓ Mensaje enviado")
     except Exception as e:
         logger.error(f"Error: {e}")
 
-async def post_init(app: Application):
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(enviar_mensaje, "interval", seconds=10800, args=[app])
-    scheduler.start()
-    logger.info("Bot iniciado - Enviará cada 3 horas")
+def scheduler_job():
+    asyncio.run(enviar_mensaje())
 
-def main():
+async def main():
+    global app
+    
     app = Application.builder().token(TOKEN).build()
-    app.post_init = post_init.__get__(app, Application)
-    logger.info("🚀 Arrancando...")
-    app.run_polling()
+    
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(scheduler_job, 'interval', seconds=10800)
+    scheduler.start()
+    
+    logger.info("🚀 Bot iniciado - Enviará cada 3 horas")
+    
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
