@@ -82,6 +82,9 @@ async def main():
     
     app = Application.builder().token(TOKEN).build()
     
+    # ENVÍA INMEDIATAMENTE
+    await enviar_mensaje()
+    
     scheduler = BackgroundScheduler()
     scheduler.add_job(scheduler_job, 'interval', seconds=10800)
     scheduler.start()
@@ -91,6 +94,5 @@ async def main():
     await app.initialize()
     await app.start()
     await app.updater.start_polling()
-
 if __name__ == '__main__':
     asyncio.run(main())
